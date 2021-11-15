@@ -13,13 +13,13 @@ namespace Taoist.Archives
     {
         // POST api/values
         [HttpPost]
-        public void SubmitBody([FromBody] string value)
+        public void Archives_Body([FromBody] string value)
         {
 
         }
 
         [HttpPost]
-        public async Task<IActionResult> SubmitIForm(IFormCollection files)
+        public async Task<IActionResult> Archives_IForm(IFormCollection files)
         {
             await new Task(() =>
             {
@@ -32,7 +32,7 @@ namespace Taoist.Archives
             return Ok(new Ol());
         }
         [HttpPost]
-        public async Task<IActionResult> SubmitIFormFile(IFormFile file)
+        public async Task<IActionResult> Archives_IFormFile(IFormFile file)
         {
             await new Task(() =>
             {
@@ -45,7 +45,7 @@ namespace Taoist.Archives
             return Ok(new Ol());
         }
         [HttpPost]
-        public async Task<IActionResult> SubmitBodyIForm([FromBody] string type, IFormCollection files)
+        public async Task<IActionResult> Archives_BodyIForm([FromBody] string type, IFormCollection files)
         {
             await new Task(() =>
             {
@@ -58,7 +58,7 @@ namespace Taoist.Archives
             return Ok(new Ol());
         }
         [HttpPost]
-        public async Task<IActionResult> SubmitTxtIForm(string type, IFormCollection files)
+        public async Task<IActionResult> Archives_TxtIForm(string type, IFormCollection files)
         {
             await new Task(() =>
             {

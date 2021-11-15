@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -13,6 +14,7 @@ namespace Taoist.Archives.project
         /// 端口号
         /// </summary>
         public static int NetworkPort { get; set; } = PortIsUsed();
+        public static string NetworkIP { get; set; } = "127.0.0.1";
         /// <summary>        
         /// 获取操作系统已用的端口号        
         /// </summary>        
@@ -26,7 +28,7 @@ namespace Taoist.Archives.project
             return port;
         }
     }
-    
+
     public static class Windows_WebServer
     {
         public static bool running = false; // Is it running?
@@ -141,53 +143,119 @@ namespace Taoist.Archives.project
                 notImplemented(clientSocket);
                 return;
             }
-
-            string uri = "/";
-            for (int i = 0; i < requestedFile.Split('/').Length; i++)
-            {
-                var itm = requestedFile.Split('/')[i];
-                itm = System.Web.HttpUtility.UrlDecode(itm);
-                if (!System.String.IsNullOrEmpty(itm))
-                {
-                    uri += itm + (i < requestedFile.Split('/').Length - 1 ? '/' : 0);
-                }
-            }
-            requestedFile = uri;
-
+            requestedFile = System.Web.HttpUtility.UrlDecode(requestedFile, System.Text.Encoding.UTF8);
+           
             requestedFile = requestedFile.Replace('/', '\\').Replace("\\..", "");
-
-            System.Console.WriteLine("requestedFile:" + requestedFile);
+            //System.Console.WriteLine("requestedFile:" + requestedFile);
             start = requestedFile.LastIndexOf('.') + 1;
             if (start > 0)
             {
                 length = requestedFile.Length - start;
-                string extension = requestedFile.Substring(start, length);
+                string extension = requestedFile.Substring(start, length).ToLower();
                 if (extensions.ContainsKey(extension)) // Do we support this extension?
                     if (File.Exists(contentPath + requestedFile)) //If yes check existence of the file
-                                                                  // Everything is OK, send requested file with correct content type:
                         sendOkResponse(clientSocket,
                           File.ReadAllBytes(contentPath + requestedFile), extensions[extension]);
                     else
-                        notFound(clientSocket); // We don't support this extension.
-                                                // We are assuming that it doesn't exist.
+                        notFound(clientSocket);
+
+                else {
+
+                    sendResponse(clientSocket, UTF16to8($"<!DOCTYPE html><html lang='zh'><head><meta charset='utf-8'><title>找不到文件</title></head><body><h1>404 - 傻宝 你忘记添加MIME类型了鸭！</h1></body></html>"), "404 Not Implemented", "text/html");
+                }
+                // We don't support this extension.
+                // We are assuming that it doesn't exist.
             }
             else
             {
-                // If file is not specified try to send index.htm or index.html
-                // You can add more (default.htm, default.html)
-                if (requestedFile.Substring(length - 1, 1) != @"\")
-                    requestedFile += @"\";
                 if (File.Exists(contentPath + requestedFile + "index.htm"))
                     sendOkResponse(clientSocket,
                       File.ReadAllBytes(contentPath + requestedFile + "\\index.htm"), "text/html");
                 else if (File.Exists(contentPath + requestedFile + "index.html"))
                     sendOkResponse(clientSocket,
                       File.ReadAllBytes(contentPath + requestedFile + "\\index.html"), "text/html");
+                else if (Directory.Exists(contentPath + requestedFile)) 
+                    notStaticFiles(clientSocket, contentPath ,requestedFile);
                 else
-                    notFound(clientSocket);
+                  notFound(clientSocket);
             }
 
 
+        }
+        private static void notStaticFiles(Socket clientSocket,string contentPath , string requestedFile) {
+            var collection = Directorys.DirectoryStructure.Get(contentPath + requestedFile);
+            string _html = Taoist.Archives.Resource.index;
+
+            string index = "";
+            foreach (var item in collection)
+            {
+                //<tr class="directory">
+                //    <td class="name"><a href = "./8 18/" > 8 18/</a></td>
+                //    <td></td>
+                //    <td class="modified">2021/9/28 9:42:20 &#x2B;00:00</td>
+                //</tr>
+
+                //<tr class="file">
+                //    <td class="name"><a href = "./cesar-louvre-museum.zip" > cesar - louvre - museum.zip </ a ></ td >
+                //    <td class="length">48,124,019</td>
+                //    <td class="modified">2021/9/7 12:36:17 &#x2B;00:00</td>
+                //</tr>
+                string uri = "/";
+               
+                var arr = requestedFile.Split(new char[1] { '\\' });
+
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    var str = arr[i];
+                    if (i != arr.Length - 1) {
+                        if (!string.IsNullOrEmpty(str))
+                            uri += str.Replace(@"\", "") + "/";
+                    }else if (!string.IsNullOrEmpty(str))
+                        uri += str.Replace(@"\", "");
+
+                }
+
+                if ("/" != uri)
+                    uri += "/" + (item.text.Replace("/", ""));
+                else { uri += (item.text.Replace("/", "")); }
+               
+                if (item.children.Count != 0)
+                {
+                    index += "<tr class='directory'>" +
+                    $"<td class='name'><a href = '{uri}'>{item.text}/</a></td>" +
+                    "<td></td> " +
+                    "<td class='modified'>2021/9/28 9:42:20 &#x2B;00:00</td>" +
+                    "</tr>";
+                }
+                else
+                {
+                    index += "<tr class='file'>" +
+                         $"<td class='name'><a href = '{uri}' >{item.text} </a></td>" +
+                         "<td class='length'>48,124,019</td>" +
+                         "<td class='modified'>2021/9/7 12:36:17 &#x2B;00:00</td>" +
+                     "</tr>";
+                }
+          
+            }
+            string a = "", url = "";
+            for (int i = 0; i < requestedFile.Split(new char[1] { '\\' }).Length; i++)
+            {
+                var item = requestedFile.Split(new char[1] { '\\' })[i];
+                if (item != "")
+                {
+                    url += "/" + item;
+                    a += $"<a href='{url}'>{ item + "/"}</a>";
+                }
+            }
+            
+            _html = _html.Replace("{aaaa}", a);
+            sendResponse(clientSocket, UTF16to8(_html.Replace("{&&&&}", index)), "200 Not Implemented", "text/html");
+        }
+        private static string UTF16to8(string str) {
+            byte[] buffer = Encoding.Unicode.GetBytes(str);
+            byte[] _temp = Encoding.Convert(Encoding.Unicode/*原始编码*/, Encoding.UTF8/*目标编码*/, buffer);
+            string result = Encoding.UTF8.GetString(_temp);
+            return result;
         }
         private static void notImplemented(Socket clientSocket)
         {
@@ -201,17 +269,15 @@ namespace Taoist.Archives.project
              "501 Not Implemented", "text/html");
 
         }
-
         private static void notFound(Socket clientSocket)
         {
-            string index = Taoist.Archives.Resource.index;
-            sendResponse(clientSocket, index, "501 Not Implemented", "text/html");
-            //sendResponse(clientSocket, "<html><head><meta " +
-            // "http-equiv=\"Content-Type\" content=\"text/html; " +
-            // "charset =utf-8\"></head><body><h2>Atasoy Simple Web " +
-            // "Server </h2><div>404 - Not " +
-            // "Found </div></body></html>",
-            // "404 Not Found", "text/html");
+            
+            sendResponse(clientSocket, "<html><head><meta " +
+             "http-equiv=\"Content-Type\" content=\"text/html; " +
+             "charset =utf-8\"></head><body><h2>Atasoy Simple Web " +
+             "Server </h2><div>404 - Not " +
+             "Found </div></body></html>",
+             "404 Not Found", "text/html");
         }
 
         private static void sendOkResponse(Socket clientSocket, byte[] bContent, string contentType)
@@ -367,18 +433,7 @@ namespace Taoist.Archives.project
                 return;
             }
 
-            string uri = "/";
-            for (int i = 0; i < requestedFile.Split('/').Length; i++)
-            {
-                var itm = requestedFile.Split('/')[i];
-                itm = System.Web.HttpUtility.UrlDecode(itm);
-                if (!System.String.IsNullOrEmpty(itm))
-                {
-                    uri += itm + (i < requestedFile.Split(new char['/']).Length - 1 ? "/" : ""); ;
-                }
-            }
-            requestedFile = uri;
-
+            requestedFile = System.Web.HttpUtility.UrlDecode(requestedFile, System.Text.Encoding.UTF8);
             requestedFile = requestedFile.Replace('/', '\\').Replace("\\..", "");
             System.Console.WriteLine("requestedFile:" + requestedFile);
 

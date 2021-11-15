@@ -91,13 +91,13 @@ namespace Taoist.Archives.Xunit
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
 
-            staticFileConfigure.Configure(app);
-            var c =   useDirectoryBrowser.Configure(new dbConfigure
-            {
-                ip = "127.0.0.1",
-                path = @"D:\数据\模型数据"
-            });
-            Console.WriteLine(c.url);
+            staticFileConfigure.Configure(app, @"D:\数据\模型数据");
+            var c =   useDirectoryBrowser.Configure(@"D:\数据\模型数据");
+#if DEBUG
+            System.Diagnostics.Process.Start("explorer", c.url);
+            System.Diagnostics.Process.Start("explorer", " http://localhost:5000/");
+#endif
+
             //启用中间件服务生成Swagger作为JSON终结点
             app.UseSwagger();
             //启用中间件服务对swagger-ui，指定Swagger JSON终结点

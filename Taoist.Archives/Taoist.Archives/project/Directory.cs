@@ -6,17 +6,15 @@ using System.Text;
 
 namespace Taoist.Archives.project
 {
-    class Directorys
+    public static class Directorys
     {
-
-        private static dbConfigure _config = UseDirectoryBrowser.configure;
-        class DirectoryStructure {
-            public static List<FileNames> _json { get; set; } = Get();
+        public static class DirectoryStructure {
+            public static List<FileNames> _json { get; set; } = Get(UseDirectoryBrowser.PhysicalPath);
             public static List<FileNames> Structure()
             {
                 try
                 {
-                    _json = Get();
+                    _json = Get(UseDirectoryBrowser.PhysicalPath);
                     return _json;
                 }
                 catch (Exception ex)
@@ -34,7 +32,7 @@ namespace Taoist.Archives.project
 
                 public string text { get; set; }
                 public state state { get; set; }
-                public List<FileNames> children { get; set; }
+                public List<FileNames> children { get; set; } = new List<FileNames>() { };
                 public string icon { get; set; }
             }
             public class state
@@ -45,16 +43,16 @@ namespace Taoist.Archives.project
             //获得指定路径下所有文件名
             public static List<FileNames> getFileName(List<FileNames> list, string filepath)
             {
-                var uri = "http://" + _config.ip + ":" + Painter.NetworkPort + "/";
+                var uri = "http://" + Painter.NetworkIP + ":" + Painter.NetworkPort + "/";
                 DirectoryInfo root = new DirectoryInfo(filepath);
                 foreach (FileInfo f in root.GetFiles())
                 {
-                    var str = Path.GetFileName(f.FullName).ToLower();
-                    if ("tileset.json" == str)
+                    //var str = Path.GetFileName(f.FullName).ToLower();
+                    //if ("tileset.json" == str)//约束文件格式
                     {
                         list.Add(new FileNames
                         {
-                            uri = f.FullName.Replace(_config.path, uri).Replace("\\", "/"),
+                            uri = f.FullName.Replace(UseDirectoryBrowser.PhysicalPath, uri).Replace("\\", "/"),
                             text = f.Name,
                             state = new state { opened = false },
                             icon = "jstree-file"
@@ -90,9 +88,8 @@ namespace Taoist.Archives.project
             /// </summary>
             /// <returns></returns>
             // GET api/values
-            public static List<FileNames> Get()
+            public static List<FileNames> Get(string _path)
             {
-                var _path = _config.path;
                 if (String.IsNullOrEmpty(_path))
                 {
                     return null;
@@ -100,7 +97,7 @@ namespace Taoist.Archives.project
 
                 Dictionary<String, String[]> fileName = new Dictionary<String, String[]>();
                 Dictionary<String, String[]> pngfileName = new Dictionary<String, String[]>();
-                string path = Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(_path));// @"D:\Work\publish\MapData";
+                string path = Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(_path));
 
 
                 List<FileNames> GetAllPath()
@@ -124,7 +121,7 @@ namespace Taoist.Archives.project
             /// </summary>
             public static string[] GetFile(string fullPath, bool isFullName = true)
             {
-                var uri = "http://" + _config.ip + ":" + Painter.NetworkPort + "/";
+                var uri = "http://" + Painter.NetworkIP + ":" + Painter.NetworkPort + "/";
                 try
                 {
                     fileList.Clear();
@@ -170,7 +167,7 @@ namespace Taoist.Archives.project
 
                         if (bl)
                         {
-                            a.Add(fileList[i].Replace(_config.path, uri).Replace("\\", "/"));
+                            a.Add(fileList[i].Replace(UseDirectoryBrowser.PhysicalPath, uri).Replace("\\", "/"));
                         }
 
                     }

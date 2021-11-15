@@ -12,19 +12,18 @@ namespace Taoist.Archives.project
 {
     public class StaticFileConfigure
     {
-       
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app)
+        public void Configure(IApplicationBuilder app,string path)
         {
             //app.UseStaticFiles();//使用默认文件夹wwwroot
 
             var dir = new DirectoryBrowserOptions();
-            dir.FileProvider = new PhysicalFileProvider(@"D:\数据\模型数据");
+            dir.FileProvider = new PhysicalFileProvider(path);
             app.UseDirectoryBrowser(dir);
 
             //更改默认文件夹 (StaticFileOptions方法)
             var staticfile = new StaticFileOptions();
-            staticfile.FileProvider = new PhysicalFileProvider(@"D:\数据\模型数据");//指定目录，这里指C盘，也可以是其他目录
+            staticfile.FileProvider = new PhysicalFileProvider(path);//指定目录，这里指C盘，也可以是其他目录
             app.UseStaticFiles(staticfile);//使用默认文件夹wwwroot
                                            //手动设置MIME Type,或者设置一个默认值， 以解决某些文件MIME Type文件识别不到，出现404错误
             staticfile.ServeUnknownFileTypes = true;
@@ -41,38 +40,33 @@ namespace Taoist.Archives.project
     }
     public class UseDirectoryBrowser
     {
-        public static dbConfigure configure = new dbConfigure();
+        public static string PhysicalPath { get; set; } = "c://";
         public void stop() {
             Windows_WebServer.stop();
         }
-        public void start()
+        public bool start()
         {
-            //string index = Taoist.Archives.Resource.index;
-
-
-            if (!string.IsNullOrEmpty(configure.path) && !string.IsNullOrEmpty(configure.ip))
-                Windows_WebServer.start(System.Net.IPAddress.Parse(configure.ip), Painter.NetworkPort, 1, configure.path);
+            stop();
+            if (Directory.Exists(PhysicalPath))//如果不存在就创建file文件夹
+            {
+                Windows_WebServer.start(System.Net.IPAddress.Parse(Painter.NetworkIP), Painter.NetworkPort, 1, PhysicalPath);
+                return true;
+            }
+            return false;
         }
 
-        public Identity Configure(dbConfigure configure)
+        public entity Configure(string path)
         {
-            UseDirectoryBrowser.configure = configure; start();
-            return new Identity()
+            PhysicalPath = path; start();
+            return new entity()
             {
-                url = $"http://{System.Net.IPAddress.Parse(configure.ip)}:{ Painter.NetworkPort}"
+                url = $"http://{System.Net.IPAddress.Parse(Painter.NetworkIP)}:{ Painter.NetworkPort}"
             };
         }
         
     }
-    /// <summary>
-    /// 
-    /// </summary>
-    public class dbConfigure
-    {
-        public  string ip { get; set; }
-        public  string path { get; set; }
-    }
-    public class Identity {
+
+    public class entity {
         public string url { get; set; }
     }
 }
