@@ -11,7 +11,7 @@ Wiki:
 >> Startup.cs
 >> ```
 >> <!--下面是Configure 配置 Startup.cs-->
->>>>        Web.UseDirectoryBrowser useDirectoryBrowser = new Web.UseDirectoryBrowser();
+>>        Web.UseDirectoryBrowser useDirectoryBrowser = new Web.UseDirectoryBrowser();
 >>        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
 >>        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
 >>        {
