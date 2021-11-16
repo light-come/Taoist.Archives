@@ -8,12 +8,21 @@ Wiki:
 * 文件增删改管理
 
 > （Demo）
->> Web.UseDirectoryBrowser useDirectoryBrowser = new Web.UseDirectoryBrowser();
+>> Startup.cs
 >> ```
->> <!--这是多行代码输入的地方,下面是例子-->
->>var c =  useDirectoryBrowser.Configure(@"D:\数据");
->>#if DEBUG
->>            System.Diagnostics.Process.Start("explorer", c.url);
->>#endif
+>> <!--下面是Configure 配置 Startup.cs-->
+>>>>        Web.UseDirectoryBrowser useDirectoryBrowser = new Web.UseDirectoryBrowser();
+>>        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+>>        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+>>        {
+>>
+>>                    staticFileConfigure.Configure(app, @"D:\数据\模型数据");
+>>                    var c =   useDirectoryBrowser.Configure(@"D:\数据\模型数据");
+>>                    #if DEBUG
+>>                      System.Diagnostics.Process.Start("explorer", c.url);
+>>                      System.Diagnostics.Process.Start("explorer", " http://localhost:5000/");
+>>                    #endif
+>>                    ...
+>>        }
 >> 
 >> ``
