@@ -1,39 +1,86 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
-
+using System.Threading.Tasks;
+using Taoist.Archives.shared;
+/// <summary>
+/// 资源处理
+/// </summary>
 namespace Taoist.Archives.project
 {
+    /// <summary>
+    /// 内置服务器文件解析类 (未与AspNetCore.StaticFiles进行交叉联动
+    /// </summary>
     public static class Directorys
     {
-        public static class DirectoryStructure {
-            public static List<FileNames> _json { get; set; } = Get(UseDirectoryBrowser.PhysicalPath);
-            public static List<FileNames> Structure()
+        public static string SHA1(string s)
+        {
+            try
             {
-                try
-                {
-                    _json = Get(UseDirectoryBrowser.PhysicalPath);
-                    return _json;
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                    return null;
-                }
+                FileStream file = new FileStream(s, FileMode.Open);
+                SHA1 sha1 = new SHA1CryptoServiceProvider();
+                byte[] retval = sha1.ComputeHash(file);
+                file.Close();
 
+                StringBuilder sc = new StringBuilder();
+                for (int i = 0; i < retval.Length; i++)
+                {
+                    sc.Append(retval[i].ToString("x2"));
+                }
+                return  (sc).ToString();
             }
-
-            public class FileNames
+            catch (Exception ex)
             {
-                public int id { get; set; }
-                public string uri { get; set; }
+                return (ex.Message);
+            }
+        }
+        public static string MD5(string s)
+        {
+            try
+            {
+                FileStream file = new FileStream(s, FileMode.Open);
+                MD5 md5 = new MD5CryptoServiceProvider();
+                byte[] retval = md5.ComputeHash(file);
+                file.Close();
 
+                StringBuilder sc = new StringBuilder();
+                for (int i = 0; i < retval.Length; i++)
+                {
+                    sc.Append(retval[i].ToString("x2"));
+                }
+                return  (sc).ToString();
+            }
+            catch (Exception ex)
+            {
+                return  (ex.Message);
+            }
+        }
+
+
+        /// <summary>
+        /// 文件读取类
+        /// </summary>
+        public static class DirectoryStructure {
+            /// <summary>
+            /// 获取根目录结构 未启动内置服务器时uri资源链接不起作用
+            /// </summary>
+            public static List<Files> root_ { get; set; } = Get(Web.PhysicalPath, false);
+           
+            public class Files
+            {
+                public string id { get; set; }
+                public string uri { get; set; }
                 public string text { get; set; }
                 public state state { get; set; }
-                public List<FileNames> children { get; set; } = new List<FileNames>() { };
-                public string icon { get; set; }
+                public List<Files> children { get; set; } = new List<Files>() { };
+                public long szie { get; set; }
+                public string time { get; set; }
+                public string type { get; set; }
             }
             public class state
             {
@@ -41,30 +88,39 @@ namespace Taoist.Archives.project
             }
             //以上字段为树形控件中需要的属性
             //获得指定路径下所有文件名
-            public static List<FileNames> getFileName(List<FileNames> list, string filepath)
+            public static List<Files> getFileName(List<Files> list, string filepath)
             {
-                var uri = "http://" + Painter.NetworkIP + ":" + Painter.NetworkPort + "/";
+                var uri = "http://" + Painter.NetworkIP + ":" + Painter.NetworkPort;
                 DirectoryInfo root = new DirectoryInfo(filepath);
                 foreach (FileInfo f in root.GetFiles())
                 {
+                  
                     //var str = Path.GetFileName(f.FullName).ToLower();
                     //if ("tileset.json" == str)//约束文件格式
                     {
-                        list.Add(new FileNames
+                        list.Add(new Files
                         {
-                            uri = f.FullName.Replace(UseDirectoryBrowser.PhysicalPath, uri).Replace("\\", "/"),
+                            id = SHA1(f.FullName),
+                            uri = f.FullName.Replace(Web.PhysicalPath, uri).Replace("\\", "/"),
                             text = f.Name,
+                            time = f.LastWriteTimeUtc.ToString("yyyy/MM/dd HH:mm:ss zz"),
+                            szie = f.Length,
                             state = new state { opened = false },
-                            icon = "jstree-file"
+                            type = "jstree-file"
                         });
                     }
                 }
                 return list;
             }
-            //获得指定路径下的所有子目录名
-            // <param name="list">文件列表</param>
-            // <param name="path">文件夹路径</param>
-            public static List<FileNames> GetallDirectory(List<FileNames> list, string path)
+
+            /// <summary>
+            /// 获得指定路径下的所有子目录名
+            /// </summary>
+            /// <param name="list">文件列表</param>
+            /// <param name="path">文件夹路径</param>
+            /// <param name="all">是否深度索引</param>
+            /// <returns></returns>
+            public static List<Files> GetallDirectory(List<Files> list, string path,bool all = false)
             {
                 DirectoryInfo root = new DirectoryInfo(path);
                 var dirs = root.GetDirectories();
@@ -72,11 +128,13 @@ namespace Taoist.Archives.project
                 {
                     foreach (DirectoryInfo d in dirs)
                     {
-                        list.Add(new FileNames
+                        list.Add(new Files
                         {
                             text = d.Name,
+                            time = d.LastWriteTimeUtc.ToString("yyyy/MM/dd HH:mm:ss zz"),
                             state = new state { opened = false },
-                            children = GetallDirectory(new List<FileNames>(), d.FullName)
+                            type = "files",
+                            children = !all ? new List<Files>() : GetallDirectory(new List<Files>(), d.FullName, all)
                         });
                     }
                 }
@@ -88,23 +146,19 @@ namespace Taoist.Archives.project
             /// </summary>
             /// <returns></returns>
             // GET api/values
-            public static List<FileNames> Get(string _path)
+            public static List<Files> Get(string _path, bool all = false)
             {
                 if (String.IsNullOrEmpty(_path))
                 {
                     return null;
                 }
-
-                Dictionary<String, String[]> fileName = new Dictionary<String, String[]>();
-                Dictionary<String, String[]> pngfileName = new Dictionary<String, String[]>();
                 string path = Encoding.UTF8.GetString(Encoding.UTF8.GetBytes(_path));
 
-
-                List<FileNames> GetAllPath()
+                List<Files> GetAllPath()
                 {
                     //获取当前系统的根路径           
                     string rootpath = path;
-                    var list = GetallDirectory(new List<FileNames>(), rootpath).ToArray();
+                    var list = GetallDirectory(new List<Files>(), rootpath,all).ToArray();
                     return list.ToList();
                 }
                 var data = GetAllPath();
@@ -121,7 +175,7 @@ namespace Taoist.Archives.project
             /// </summary>
             public static string[] GetFile(string fullPath, bool isFullName = true)
             {
-                var uri = "http://" + Painter.NetworkIP + ":" + Painter.NetworkPort + "/";
+                var uri = "http://" + Painter.NetworkIP + ":" + Painter.NetworkPort;
                 try
                 {
                     fileList.Clear();
@@ -167,7 +221,7 @@ namespace Taoist.Archives.project
 
                         if (bl)
                         {
-                            a.Add(fileList[i].Replace(UseDirectoryBrowser.PhysicalPath, uri).Replace("\\", "/"));
+                            a.Add(fileList[i].Replace(Web.PhysicalPath, uri).Replace("\\", "/"));
                         }
 
                     }
@@ -221,10 +275,155 @@ namespace Taoist.Archives.project
             }
 
             #endregion
+        }
 
+        public static class DirectoryFileStore {
+            public static async Task<IO.IActionResult.Ok> FileStore(IFormCollection ifc) {
 
+                string webRootPath = Web.PhysicalPath;
+                string fileFolder = Path.Combine(webRootPath, ".WebCache");
 
-            
+                if (!Directory.Exists(webRootPath))
+                    Directory.CreateDirectory(webRootPath);
+
+                IO.IActionResult.Ok iio = new IO.IActionResult.Ok();
+                 var data = new IO.IActionResult.data
+                 {
+                     count = ifc.Files.Count,
+                     size = 0
+                 };
+
+                try
+                {
+                    if (ifc.Files.Count >= 1)
+                    {
+                        foreach (var item in ifc.Files)
+                        {
+                            if (item.Length > 0)
+                            {
+                                data.size = item.Length;
+
+                                var fileName = DateTime.Now.ToString("yyyyMMddHHmmss") +
+                                               Path.GetExtension(item.FileName);
+                                var filePath = Path.Combine(fileFolder, fileName);
+
+                                using (var stream = new FileStream(filePath, FileMode.Create))
+                                {
+                                   
+                                    await item.CopyToAsync(stream);
+                                }
+                            }
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+                    iio.code = "1";
+                    iio.msg = ex.Message;
+                }
+                iio.data = data;
+                return iio;
+            }
+
+            public static async Task<IO.IActionResult.Ok> FileStore(List<IFormFile> ff)
+            {
+                string RootPath = Web.PhysicalPath;
+                long size = ff.Sum(f => f.Length);
+                var fileFolder = Path.Combine(RootPath, ".WebCache");
+
+                if (!Directory.Exists(fileFolder))
+                    Directory.CreateDirectory(fileFolder);
+
+                foreach (var formFile in ff)
+                {
+                    if (formFile.Length > 0)
+                    {
+                        var fileName = DateTime.Now.ToString("yyyyMMddHHmmss") +
+                                       Path.GetExtension(formFile.FileName);
+                        var filePath = Path.Combine(fileFolder, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await formFile.CopyToAsync(stream);
+                        }
+                    }
+                }
+                //return Ok(new { count = files.Count, size });
+
+                IO.IActionResult.Ok iio = new IO.IActionResult.Ok()
+                {
+                    data = new IO.IActionResult.data
+                    {
+                        count = ff.Count,
+                        size = size
+                    }
+                };
+                return iio;
+            }
+
+            public static async Task<IO.IActionResult.Ok> FileStore()
+            {
+                string RootPath = Web.PhysicalPath;
+                var fileFolder = Path.Combine(RootPath, ".WebCache");
+
+                if (!Directory.Exists(fileFolder))
+                    Directory.CreateDirectory(fileFolder);
+
+                var data = Directorys.DirectoryStructure.Get(fileFolder, true);
+                IO.IActionResult.Ok iio = new IO.IActionResult.Ok()
+                {
+                    data = new {
+                        list = data,
+                        count = data.Count
+                    },
+                };
+                return iio;
+            }
+            public static async Task<IO.IActionResult.Ok> FileStore(string id)
+            {
+                string RootPath = Web.PhysicalPath;
+                var fileFolder = Path.Combine(RootPath, ".WebCache");
+
+                if (!Directory.Exists(fileFolder))
+                    Directory.CreateDirectory(fileFolder);
+                IO.IActionResult.Ok iio = new IO.IActionResult.Ok();
+                DirectoryInfo root = new DirectoryInfo(fileFolder);
+                int i = 1;
+
+                iio.data = new
+                {
+                    count = 0
+                };
+
+                foreach (FileInfo f in root.GetFiles())
+                {
+                    if (SHA1(f.FullName) == id)
+                    {
+                        try
+                        {
+                            File.Delete(f.FullName);//删除指定文件
+                            iio.data = new
+                            {
+                                count = i++,
+                                id
+                            };
+                        }
+                        catch (Exception ex)
+                        {
+                            iio.code = "1";
+                            iio.msg = ex.Message;
+                            iio.data = new {
+                                count = 0,
+                                id
+                            };
+                            return iio;
+                        }
+                    }
+                }
+                return iio;
+            }
+
 
         }
     }

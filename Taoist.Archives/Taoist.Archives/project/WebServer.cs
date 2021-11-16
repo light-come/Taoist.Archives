@@ -143,7 +143,7 @@ namespace Taoist.Archives.project
                 notImplemented(clientSocket);
                 return;
             }
-            requestedFile = System.Web.HttpUtility.UrlDecode(requestedFile, System.Text.Encoding.UTF8);
+            requestedFile = System.Web.HttpUtility.UrlDecode(requestedFile.Replace("+", "%2B"), System.Text.Encoding.UTF8);
            
             requestedFile = requestedFile.Replace('/', '\\').Replace("\\..", "");
             //System.Console.WriteLine("requestedFile:" + requestedFile);
@@ -219,20 +219,20 @@ namespace Taoist.Archives.project
                     uri += "/" + (item.text.Replace("/", ""));
                 else { uri += (item.text.Replace("/", "")); }
                
-                if (item.children.Count != 0)
+                if (item.type == "files")
                 {
                     index += "<tr class='directory'>" +
                     $"<td class='name'><a href = '{uri}'>{item.text}/</a></td>" +
                     "<td></td> " +
-                    "<td class='modified'>2021/9/28 9:42:20 &#x2B;00:00</td>" +
+                    $"<td class='modified'>{item.time}</td>" +
                     "</tr>";
                 }
                 else
                 {
                     index += "<tr class='file'>" +
                          $"<td class='name'><a href = '{uri}' >{item.text} </a></td>" +
-                         "<td class='length'>48,124,019</td>" +
-                         "<td class='modified'>2021/9/7 12:36:17 &#x2B;00:00</td>" +
+                         $"<td class='length'>{item.szie}</td>" +
+                         $"<td class='modified'>{item.time}</td>" +
                      "</tr>";
                 }
           
@@ -433,7 +433,7 @@ namespace Taoist.Archives.project
                 return;
             }
 
-            requestedFile = System.Web.HttpUtility.UrlDecode(requestedFile, System.Text.Encoding.UTF8);
+            requestedFile = System.Web.HttpUtility.UrlDecode(requestedFile.Replace("+", "%2B"), System.Text.Encoding.UTF8);
             requestedFile = requestedFile.Replace('/', '\\').Replace("\\..", "");
             System.Console.WriteLine("requestedFile:" + requestedFile);
 
