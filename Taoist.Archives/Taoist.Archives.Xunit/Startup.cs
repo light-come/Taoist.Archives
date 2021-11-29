@@ -85,14 +85,14 @@ namespace Taoist.Archives.Xunit
 
         }
         private readonly string AllowSpecificOrigin = "AllowSpecificOrigin";
-        Web.StaticFileConfigure staticFileConfigure = new Web.StaticFileConfigure();
+        //Web.StaticFileConfigure staticFileConfigure = new Web.StaticFileConfigure();
         Web.UseDirectoryBrowser useDirectoryBrowser = new Web.UseDirectoryBrowser();
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
 
-            staticFileConfigure.Configure(app, @"D:\数据\模型数据");
-            var c =   useDirectoryBrowser.Configure(@"D:\数据\模型数据");
+            //staticFileConfigure.Configure(app, @"D:\数据\模型数据");
+            var c =   useDirectoryBrowser.Configure(@"C:\download");
 #if DEBUG
             System.Diagnostics.Process.Start("explorer", c.url);
             System.Diagnostics.Process.Start("explorer", " http://localhost:5000/");
