@@ -22,6 +22,31 @@ namespace NUnit.Netnr.Fast.Controllers
         {
             yield return Directorys.DirectoryStructure.Get(Web.PhysicalPath, depth);
         }
+ 
+        public static string GIS_json { get; set; } = "{}";
+
+        [HttpGet, Route("get/gis_")]//camera
+        public object GetStructure()
+        {
+            try
+            {
+                String Uri = "http://" + Painter.NetworkIP + ":" + Painter.NetworkPort + "/杭州-七堡排涝站/模型文件 20211210/qibao/";
+                GIS_json = Windows_Gis.Getjson(@"C:\模型数据\杭州-七堡排涝站\模型文件 20211210\qibao", Uri);//C:\模型数据\杭州-七堡排涝站\模型文件 20211210\qibao
+                return (new
+                {
+                    list = JsonConvert.DeserializeObject<JObject>(GIS_json)
+                });
+            }
+            catch (Exception ex)
+            {
+                return (new
+                {
+                    messerr = ex.Message
+                });
+            }
+
+        }
+
 
     }
 }

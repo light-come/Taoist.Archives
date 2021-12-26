@@ -92,10 +92,10 @@ namespace Taoist.Archives.Xunit
         {
 
             //staticFileConfigure.Configure(app, @"D:\数据\模型数据");
-            var c =   useDirectoryBrowser.Configure(@"C:\download");
+            var c =   useDirectoryBrowser.Configure(@"C:\模型数据");
 #if DEBUG
             System.Diagnostics.Process.Start("explorer", c.url);
-            System.Diagnostics.Process.Start("explorer", " http://localhost:5000/");
+            //System.Diagnostics.Process.Start("explorer", " http://localhost:5000/");
 #endif
 
             //启用中间件服务生成Swagger作为JSON终结点

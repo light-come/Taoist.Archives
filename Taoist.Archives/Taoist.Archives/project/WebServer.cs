@@ -33,7 +33,7 @@ namespace Taoist.Archives.project
     {
         public static bool running = false; // Is it running?
 
-        private static int timeout = 8; // Time limit for data transfers.
+        private static int timeout = 8 * 10; // Time limit for data transfers.
         private static Encoding charEncoder = Encoding.UTF8; // To encode string
         private static Socket serverSocket; // Our server socket
         private static string contentPath; // Root path of our contents
@@ -45,8 +45,7 @@ namespace Taoist.Archives.project
         { 
             //{ "extension", "content type" }
             { "htm", "text/html" },
-            { "b3dm", "application/zip" },
-            { "cmpt", "application/zip" },
+            { "b3dm", "application/zip" },    { "terrain", "application/zip" },{ "cmpt", "application/zip" },
             { "js", "application/javascript" },
             { "json", "application/json" },
             { "html", "text/html" },
