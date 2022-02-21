@@ -10,11 +10,12 @@ using System.Threading;
 namespace Taoist.Archives.project
 {
     public static class Painter {
+
         /// <summary>
         /// 端口号
         /// </summary>
-        public static int NetworkPort { get; set; } = PortIsUsed();
-        public static string NetworkIP { get; set; } = "127.0.0.1";
+        public static int NetworkPort { get; set; } = 1314;//PortIsUsed();//随机接口
+        public static string NetworkIP { get; set; } ="127.0.0.1";//"127.0.0.1";
         /// <summary>        
         /// 获取操作系统已用的端口号        
         /// </summary>        
@@ -27,25 +28,21 @@ namespace Taoist.Archives.project
             listener.Stop();
             return port;
         }
-    }
-
-    public static class Windows_WebServer
-    {
-        public static bool running = false; // Is it running?
-
-        private static int timeout = 8 * 10; // Time limit for data transfers.
-        private static Encoding charEncoder = Encoding.UTF8; // To encode string
-        private static Socket serverSocket; // Our server socket
-        private static string contentPath; // Root path of our contents
 
         // Content types that are supported by our server
         // You can add more...
         // To see other types: 
-        private static Dictionary<string, string> extensions = new Dictionary<string, string>()
+        public static Dictionary<string, string> extensions = new Dictionary<string, string>()
         { 
             //{ "extension", "content type" }
             { "htm", "text/html" },
-            { "b3dm", "application/zip" },    { "terrain", "application/zip" },{ "cmpt", "application/zip" },
+            { "b3dm", "application/zip" },    
+            { "terrain", "application/zip" },
+            { "cmpt", "application/zip" },
+            { "vsdx", "application/vnd.visio" },
+            { "xlsx", "application/vnd.ms-excel" },
+            { "pdf", "application/pdf" },  
+            { "docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
             { "js", "application/javascript" },
             { "json", "application/json" },
             { "html", "text/html" },
@@ -58,6 +55,18 @@ namespace Taoist.Archives.project
             { "jpeg", "image/jpeg" },
             { "zip", "application/zip"}
         };
+    }
+
+    public static class Windows_WebServer
+    {
+        public static bool running = false; // Is it running?
+
+        private static int timeout = 8 * 10; // Time limit for data transfers.
+        private static Encoding charEncoder = Encoding.UTF8; // To encode string
+        private static Socket serverSocket; // Our server socket
+        private static string contentPath; // Root path of our contents
+
+      
         public static bool start(IPAddress ipAddress, int port, int maxNOfCon, string contentPath)
         {
             if (running) return false; // If it is already running, exit.
@@ -150,17 +159,19 @@ namespace Taoist.Archives.project
             if (start > 0)
             {
                 length = requestedFile.Length - start;
-                string extension = requestedFile.Substring(start, length).ToLower();
-                if (extensions.ContainsKey(extension)) // Do we support this extension?
+                string extension = Path.GetExtension(requestedFile);//.Substring(start, length).ToLower();
+                extension = extension.Substring(1, extension.Length - 1);
+                //Console.WriteLine(extension);
+                if (Painter.extensions.ContainsKey(extension)) // Do we support this extension?
                     if (File.Exists(contentPath + requestedFile)) //If yes check existence of the file
                         sendOkResponse(clientSocket,
-                          File.ReadAllBytes(contentPath + requestedFile), extensions[extension]);
+                          File.ReadAllBytes(contentPath + requestedFile), Painter.extensions[extension]);
                     else
                         notFound(clientSocket);
 
                 else {
 
-                    sendResponse(clientSocket, UTF16to8($"<!DOCTYPE html><html lang='zh'><head><meta charset='utf-8'><title>找不到文件</title></head><body><h1>404 - 傻宝 你忘记添加MIME类型了鸭！</h1></body></html>"), "404 Not Implemented", "text/html");
+                    sendResponse(clientSocket, UTF16to8($"<!DOCTYPE html><html lang='zh'><head><meta charset='utf-8'><title>找不到文件</title></head><body><h1>404 - 傻宝 你忘记添加MIME类型了鸭！- {extension} </h1></body></html>"), "404 Not Implemented", "text/html");
                 }
                 // We don't support this extension.
                 // We are assuming that it doesn't exist.
@@ -326,27 +337,7 @@ namespace Taoist.Archives.project
         private static Socket serverSocket; // Our server socket
         private static string contentPath; // Root path of our contents
 
-        // Content types that are supported by our server
-        // You can add more...
-        // To see other types: 
-        private static Dictionary<string, string> extensions = new Dictionary<string, string>()
-        { 
-            //{ "extension", "content type" }
-            { "htm", "text/html" },
-            { "b3dm", "application/zip" },
-            { "cmpt", "application/zip" },
-            { "js", "application/javascript" },
-            { "json", "application/json" },
-            { "html", "text/html" },
-            { "xml", "text/xml" },
-            { "txt", "text/plain" },
-            { "css", "text/css" },
-            { "png", "image/png" },
-            { "gif", "image/gif" },
-            { "jpg", "image/jpg" },
-            { "jpeg", "image/jpeg" },
-            { "zip", "application/zip"}
-        };
+ 
         public static bool start(IPAddress ipAddress, int port, int maxNOfCon, string contentPath)
         {
             if (running) return false; // If it is already running, exit.
@@ -441,11 +432,11 @@ namespace Taoist.Archives.project
             {
                 length = requestedFile.Length - start;
                 string extension = requestedFile.Substring(start, length);
-                if (extensions.ContainsKey(extension)) // Do we support this extension?
+                if (Painter.extensions.ContainsKey(extension)) // Do we support this extension?
                     if (File.Exists(contentPath + requestedFile)) //If yes check existence of the file
                                                                   // Everything is OK, send requested file with correct content type:
                         sendOkResponse(clientSocket,
-                          File.ReadAllBytes(contentPath + requestedFile), extensions[extension]);
+                          File.ReadAllBytes(contentPath + requestedFile), Painter.extensions[extension]);
                     else
                         notFound(clientSocket); // We don't support this extension.
                                                 // We are assuming that it doesn't exist.

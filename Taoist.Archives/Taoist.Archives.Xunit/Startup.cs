@@ -92,7 +92,7 @@ namespace Taoist.Archives.Xunit
         {
 
             //staticFileConfigure.Configure(app, @"D:\数据\模型数据");
-            var c =   useDirectoryBrowser.Configure(@"C:\模型数据");
+            var c =   useDirectoryBrowser.Configure(@"C:\ZP\资源代理");
 #if DEBUG
             System.Diagnostics.Process.Start("explorer", c.url);
             //System.Diagnostics.Process.Start("explorer", " http://localhost:5000/");
